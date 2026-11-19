@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+	<head>
+		<title>D3 Spider Chart Comparison</title>
+		<script src="https://d3js.org/d3.v7.min.js"></script>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				margin: 20px;
+			}
+
+			.charts {
+				display: flex;
+				justify-content: center;
+				align-items: flex-start;
+				gap: 50px;
+			}
+
+			svg {
+				overflow: visible;
+			}
+
+			.axis {
+				stroke: #aaa;
+				stroke-dasharray: 3, 3;
+			}
+
+			.grid {
+				fill: none;
+				stroke: #ddd;
+			}
+
+			.radar-area {
+				fill: steelblue;
+				fill-opacity: 0.25;
+				stroke: steelblue;
+				stroke-width: 2;
+			}
+
+			.radar-area.second {
+				fill: darkorange;
+				fill-opacity: 0.25;
+				stroke: darkorange;
+			}
+
+			.radar-point {
+				fill: steelblue;
+			}
+
+			.radar-point.second {
+				fill: darkorange;
+			}
+
+			.label {
+				font-size: 12px;
+			}
+
+			.chart-title {
+				font-size: 17px;
+				font-weight: bold;
+				text-anchor: middle;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="charts">
+			<svg id="spider" width="450" height="450"></svg>
+			<svg id="spider2" width="450" height="450"></svg>
+		</div>
+
+		<script>
+			// ----------------------------------
+			// 1. Shared data
+			// ----------------------------------
+
+			const data = [
+				{ variable: "Variable A", value: 85 },
+				{ variable: "Variable B", value: 65 },
+				{ variable: "Variable C", value: 45 },
+				{ variable: "Variable D", value: 90 },
+				{ variable: "Variable E", value: 10 },
+			];
+
+			const maxValue = 100;
+
+			// Second chart uses the same data in a different order
+			const reorderedData = [
+				"Variable A",
+				"Variable C",
+				"Variable E",
+				"Variable B",
+				"Variable D",
+			].map((variable) => data.find((d) => d.variable === variable));
+
+			// ----------------------------------
+			// 2. Shared chart dimensions
+			// ----------------------------------
+
+			const width = 450;
+			const height = 450;
+			const centerX = width / 2;
+			const centerY = height / 2;
+			const radius = 150;
+
+			const rScale = d3.scaleLinear().domain([0, maxValue]).range([0, radius]);
+
+			// ----------------------------------
+			// 3. Reusable spider chart function
+			// ----------------------------------
+
+			function drawSpiderChart(svgId, chartData, title, second = false) {
+				const spider = d3.select(svgId);
+
+				const angleSlice = (2 * Math.PI) / chartData.length;
+
+				const color = second ? "darkorange" : "steelblue";
+
+				spider
+					.append("text")
+					.attr("class", "chart-title")
+					.attr("x", centerX)
+					.attr("y", 25)
+					.text(title);
+
+				// Draw concentric grid circles
+				[20, 40, 60, 80, 100].forEach((level) => {
+					spider
+						.append("circle")
+						.attr("class", "grid")
+						.attr("cx", centerX)
+						.attr("cy", centerY)
+						.attr("r", rScale(level));
+
+					spider
+						.append("text")
+						.attr("x", centerX + 5)
+						.attr("y", centerY - rScale(level))
+						.attr("font-size", 10)
+						.attr("fill", "#777")
+						.text(level);
+				});
+
+				// Calculate radar coordinates
+				const radarData = chartData.map((d, i) => {
+					const angle = i * angleSlice - Math.PI / 2;
+
+					return {
+						...d,
+						x: centerX + rScale(d.value) * Math.cos(angle),
+						y: centerY + rScale(d.value) * Math.sin(angle),
+						axisX: centerX + radius * Math.cos(angle),
+						axisY: centerY + radius * Math.sin(angle),
+					};
+				});
+
+				// Draw axes and labels
+				radarData.forEach((d) => {
+					spider
+						.append("line")
+						.attr("class", "axis")
+						.attr("x1", centerX)
+						.attr("y1", centerY)
+						.attr("x2", d.axisX)
+						.attr("y2", d.axisY);
+
+					const angle = Math.atan2(d.axisY - centerY, d.axisX - centerX);
+
+					spider
+						.append("text")
+						.attr("class", "label")
+						.attr("x", centerX + (radius + 25) * Math.cos(angle))
+						.attr("y", centerY + (radius + 25) * Math.sin(angle))
+						.attr("text-anchor", "middle")
+						.attr("dominant-baseline", "middle")
+						.text(d.variable);
+				});
+
+				// Draw radar polygon
+				const radarLine = d3
+					.line()
+					.x((d) => d.x)
+					.y((d) => d.y)
+					.curve(d3.curveLinearClosed);
+
+				spider
+					.append("path")
+					.datum(radarData)
+					.attr("class", second ? "radar-area second" : "radar-area")
+					.attr("d", radarLine);
+
+				// Draw data points
+				spider
+					.selectAll(".radar-point")
+					.data(radarData)
+					.enter()
+					.append("circle")
+					.attr("class", second ? "radar-point second" : "radar-point")
+					.attr("cx", (d) => d.x)
+					.attr("cy", (d) => d.y)
+					.attr("r", 5);
+			}
+
+			// ----------------------------------
+			// 4. Draw both spider charts
+			// ----------------------------------
+
+			drawSpiderChart("#spider", data, "Spider Chart 1");
+
+			drawSpiderChart(
+				"#spider2",
+				reorderedData,
+				"Spider Chart 2 (Reordered)",
+				true,
+			);
+		</script>
+	</body>
+</html>

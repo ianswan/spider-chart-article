@@ -1,0 +1,134 @@
+body {
+	font-family: "Noto Sans JP", sans-serif;
+	text-align: center;
+}
+
+/* Filter layout */
+.filters {
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	gap: 30px;
+	margin: 25px 0;
+}
+
+.filter-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	text-align: left;
+}
+
+.filter-group label {
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.filter-group select {
+	min-width: 180px;
+	padding: 8px 12px;
+	font-size: 14px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	background-color: white;
+}
+
+/* Multi-select dropdown */
+#player-filter {
+	min-width: 250px;
+	height: 125px;
+	padding: 5px;
+}
+
+#player-filter option {
+	padding: 5px;
+}
+
+/* Player legend */
+.player-legend {
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 20px;
+	margin: 20px auto;
+}
+
+.legend-item {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 13px;
+}
+
+.legend-color {
+	display: inline-block;
+	width: 14px;
+	height: 14px;
+	border-radius: 3px;
+}
+
+/* Three charts side by side */
+.charts-container {
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	gap: 15px;
+	flex-wrap: wrap;
+}
+
+#spider-charts,
+#line-chart,
+#bar-chart,
+#parallel-coordinates {
+	flex: 0 0 450px;
+	display: flex;
+	justify-content: center;
+}
+
+/* Responsive layout */
+@media (max-width: 1400px) {
+	.charts-container {
+		flex-wrap: wrap;
+	}
+}
+
+@media (max-width: 500px) {
+	.filters {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.charts-container {
+		flex-direction: column;
+		align-items: center;
+	}
+}
+
+/* Standard deviation chart */
+#stat-deviation-chart {
+	display: flex;
+	justify-content: center;
+	flex: 0 0 500px;
+}
+
+#stat-deviation-chart svg {
+	overflow: visible;
+}
+
+/* Standard deviation chart labels */
+.stat-label {
+	font-family: "Noto Sans JP", sans-serif;
+}
+
+.mean-label {
+	font-family: sans-serif;
+}
+
+/* Five-chart dashboard layout */
+.charts-container {
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	gap: 20px;
+}

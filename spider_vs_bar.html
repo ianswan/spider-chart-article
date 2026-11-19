@@ -1,0 +1,276 @@
+<!doctype html>
+<html>
+	<head>
+		<title>D3 Spider Chart and Bar Chart</title>
+		<script src="https://d3js.org/d3.v7.min.js"></script>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				margin: 20px;
+			}
+
+			.charts {
+				display: flex;
+				justify-content: center;
+				align-items: flex-start;
+				gap: 50px;
+			}
+
+			svg {
+				overflow: visible;
+			}
+
+			.axis {
+				stroke: #aaa;
+				stroke-dasharray: 3, 3;
+			}
+
+			.grid {
+				fill: none;
+				stroke: #ddd;
+			}
+
+			.radar-area {
+				fill: steelblue;
+				fill-opacity: 0.25;
+				stroke: steelblue;
+				stroke-width: 2;
+			}
+
+			.radar-point {
+				fill: steelblue;
+			}
+
+			.bar {
+				fill: steelblue;
+			}
+
+			.bar:hover {
+				fill: orange;
+			}
+
+			.label {
+				font-size: 12px;
+			}
+
+			.chart-title {
+				font-size: 17px;
+				font-weight: bold;
+				text-anchor: middle;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="charts">
+			<svg id="spider" width="450" height="450"></svg>
+			<svg id="histogram" width="450" height="450"></svg>
+		</div>
+
+		<script>
+			// ----------------------------------
+			// 1. Shared data
+			// ----------------------------------
+
+			const data = [
+				{ variable: "Variable A", value: 85 },
+				{ variable: "Variable B", value: 65 },
+				{ variable: "Variable C", value: 45 },
+				{ variable: "Variable D", value: 90 },
+				{ variable: "Variable E", value: 70 },
+			];
+
+			const maxValue = 100;
+
+			// ----------------------------------
+			// 2. Spider / Radar Chart
+			// ----------------------------------
+
+			const spider = d3.select("#spider");
+
+			const width = 450;
+			const height = 450;
+			const centerX = width / 2;
+			const centerY = height / 2;
+			const radius = 150;
+
+			const angleSlice = (2 * Math.PI) / data.length;
+
+			const rScale = d3.scaleLinear().domain([0, maxValue]).range([0, radius]);
+
+			spider
+				.append("text")
+				.attr("class", "chart-title")
+				.attr("x", centerX)
+				.attr("y", 25)
+				.text("Spider Chart");
+
+			// Draw concentric grid circles
+			[20, 40, 60, 80, 100].forEach((level) => {
+				spider
+					.append("circle")
+					.attr("class", "grid")
+					.attr("cx", centerX)
+					.attr("cy", centerY)
+					.attr("r", rScale(level));
+
+				spider
+					.append("text")
+					.attr("x", centerX + 5)
+					.attr("y", centerY - rScale(level))
+					.attr("font-size", 10)
+					.attr("fill", "#777")
+					.text(level);
+			});
+
+			// Calculate radar coordinates
+			const radarData = data.map((d, i) => {
+				const angle = i * angleSlice - Math.PI / 2;
+
+				return {
+					...d,
+					x: centerX + rScale(d.value) * Math.cos(angle),
+					y: centerY + rScale(d.value) * Math.sin(angle),
+					axisX: centerX + radius * Math.cos(angle),
+					axisY: centerY + radius * Math.sin(angle),
+				};
+			});
+
+			// Draw axes and labels
+			radarData.forEach((d) => {
+				spider
+					.append("line")
+					.attr("class", "axis")
+					.attr("x1", centerX)
+					.attr("y1", centerY)
+					.attr("x2", d.axisX)
+					.attr("y2", d.axisY);
+
+				spider
+					.append("text")
+					.attr("class", "label")
+					.attr(
+						"x",
+						centerX +
+							(radius + 25) *
+								Math.cos(Math.atan2(d.axisY - centerY, d.axisX - centerX)),
+					)
+					.attr(
+						"y",
+						centerY +
+							(radius + 25) *
+								Math.sin(Math.atan2(d.axisY - centerY, d.axisX - centerX)),
+					)
+					.attr("text-anchor", "middle")
+					.attr("dominant-baseline", "middle")
+					.text(d.variable);
+			});
+
+			// Draw radar polygon
+			const radarLine = d3
+				.line()
+				.x((d) => d.x)
+				.y((d) => d.y)
+				.curve(d3.curveLinearClosed);
+
+			spider
+				.append("path")
+				.datum(radarData)
+				.attr("class", "radar-area")
+				.attr("d", radarLine);
+
+			// Draw data points
+			spider
+				.selectAll(".radar-point")
+				.data(radarData)
+				.enter()
+				.append("circle")
+				.attr("class", "radar-point")
+				.attr("cx", (d) => d.x)
+				.attr("cy", (d) => d.y)
+				.attr("r", 5);
+
+			// ----------------------------------
+			// 3. Histogram / Bar Chart
+			// ----------------------------------
+
+			const histogram = d3.select("#histogram");
+
+			const margin = {
+				top: 60,
+				right: 30,
+				bottom: 80,
+				left: 50,
+			};
+
+			const chartWidth = 450 - margin.left - margin.right;
+			const chartHeight = 450 - margin.top - margin.bottom;
+
+			const g = histogram
+				.append("g")
+				.attr("transform", `translate(${margin.left},${margin.top})`);
+
+			histogram
+				.append("text")
+				.attr("class", "chart-title")
+				.attr("x", width / 2)
+				.attr("y", 25)
+				.text("Bar Chart");
+
+			// X scale
+			const xScale = d3
+				.scaleBand()
+				.domain(data.map((d) => d.variable))
+				.range([0, chartWidth])
+				.padding(0.2);
+
+			// Y scale
+			const yScale = d3
+				.scaleLinear()
+				.domain([0, maxValue])
+				.range([chartHeight, 0]);
+
+			// X axis
+			g.append("g")
+				.attr("transform", `translate(0,${chartHeight})`)
+				.call(d3.axisBottom(xScale))
+				.selectAll("text")
+				.attr("transform", "rotate(-35)")
+				.style("text-anchor", "end");
+
+			// Y axis
+			g.append("g").call(d3.axisLeft(yScale));
+
+			// Y axis label
+			g.append("text")
+				.attr("transform", "rotate(-90)")
+				.attr("x", -chartHeight / 2)
+				.attr("y", -38)
+				.attr("text-anchor", "middle")
+				.text("Value (0–100)");
+
+			// Bars
+			g.selectAll(".bar")
+				.data(data)
+				.enter()
+				.append("rect")
+				.attr("class", "bar")
+				.attr("x", (d) => xScale(d.variable))
+				.attr("y", (d) => yScale(d.value))
+				.attr("width", xScale.bandwidth())
+				.attr("height", (d) => chartHeight - yScale(d.value));
+
+			// Value labels
+			g.selectAll(".value-label")
+				.data(data)
+				.enter()
+				.append("text")
+				.attr("class", "value-label")
+				.attr("x", (d) => xScale(d.variable) + xScale.bandwidth() / 2)
+				.attr("y", (d) => yScale(d.value) - 8)
+				.attr("text-anchor", "middle")
+				.attr("font-size", 12)
+				.text((d) => d.value);
+		</script>
+	</body>
+</html>
